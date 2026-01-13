@@ -106,4 +106,4 @@ sudo ACCEPT_EULA=Y apt-get install mssql-tools18
 echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> /home/mahmoud/.bashrc
 source /home/mahmoud/.bashrc
 
-# sqlcmd -S yourserver.database.windows.net -d yourdb -U youruser -P yourpassword -N
+# sqlcmd -S eticketdbserver.database.windows.net -d eticket-db -U mahmoud -P yourpassword -N

@@ -1,0 +1,71 @@
+trigger:
+- main
+
+variables:
+  acrName: mgcontainerregistryetickets
+  acrLoginServer: mgcontainerregistryetickets.azurecr.io
+  imageName: etickets
+  imageTag: $(Build.BuildId)
+  aksClusterName: micro-aks-cluster
+  aksResourceGroup: eTickets
+  namespace: default
+
+pool:
+  name: PrivateAgents
+
+stages:
+# ===============================
+# Build & Push
+# ===============================
+- stage: Build
+  displayName: Build and Push Image
+  jobs:
+  - job: BuildPush
+    steps:
+    - checkout: self
+
+    - task: AzureCLI@2
+      displayName: Build & Push Docker Image
+      inputs:
+        azureSubscription: 'Azure-Service-Connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az acr login --name $(acrName)
+
+          docker build -t $(acrLoginServer)/$(imageName):$(imageTag) ./src
+          docker push $(acrLoginServer)/$(imageName):$(imageTag)
+
+# ===============================
+# Deploy
+# ===============================
+- stage: Deploy
+  displayName: Deploy to AKS
+  dependsOn: Build
+  jobs:
+  - job: DeployAKS
+    steps:
+    - task: AzureCLI@2
+      displayName: Deploy to AKS
+      inputs:
+        azureSubscription: 'Azure-Service-Connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks get-credentials \
+            --resource-group $(aksResourceGroup) \
+            --name $(aksClusterName) \
+            --overwrite-existing
+
+          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+          kubectl set image deployment/etickets \
+            etickets=$(acrLoginServer)/$(imageName):$(imageTag) \
+            -n $(namespace)
+
+          kubectl rollout status deployment/etickets -n $(namespace)
+
+#####################################################################################################
+#####################################################################################################

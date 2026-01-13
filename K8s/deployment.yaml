@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: CONNECTION_STRING_FROM_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: db-connection-secret
+              key: connection-string
+      #   - name: DOTNET_SYSTEM_GLOBALIZATION_INVARIANT
+      #     value: "false"
+      #   - name: DOTNET_RUNNING_IN_CONTAINER
+      #     value: "true"
+      #   - name: DOTNET_HttpPort
+      #     value: "80"
+      #   - name: DOTNET_HTTPS_REDIRECT
+      #     value: "false"   # disable HTTPS redirection inside container
+      #   volumeMounts:
+      #   - name: dataprotect-keys
+      #     mountPath: /root/.aspnet/DataProtection-Keys
+      # volumes:
+      # - name: dataprotect-keys
+      #   persistentVolumeClaim:
+      #     claimName: dataprotect-pvc
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: dataprotect-pvc
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
